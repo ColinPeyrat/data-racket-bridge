@@ -13,6 +13,7 @@ const oscClient = new Client("0.0.0.0", clientPort);
 
 let fallFft = 0;
 let amplitudeFft = -60;
+let fftIntegrated = 0;
 
 const deltaTime = 0.0166666666666667;
 
@@ -49,7 +50,13 @@ setInterval(() => {
   amplitudeFft -= fallFft * deltaTime;
   amplitudeFft = Math.max(amplitudeFft, 0.0);
 
+  fftIntegrated += amplitudeFft;
+
   oscClient.send("/audio/smoothfft", amplitudeFft, err => {
+    if (err) console.error(err);
+  });
+
+  oscClient.send("/audio/fftintegrated", fftIntegrated, err => {
     if (err) console.error(err);
   });
 }, 15);
