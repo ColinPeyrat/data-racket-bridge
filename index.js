@@ -6,7 +6,7 @@ const clientPort = 9001;
 
 // TODO: prompt user for use
 // allow to make animation on fft less chunky
-const fallDownSpeed = 0.5;
+const fallDownSpeed = 0.2;
 
 const oscServer = new Server(serverPort, "127.0.0.1");
 const oscClient = new Client("0.0.0.0", clientPort);
@@ -24,21 +24,11 @@ oscServer.on("message", function(msg) {
   });
 
   if (path.includes("fft")) {
-    // Hold-and-fall-down animation.
-    fallFft += Math.pow(10, 1 + fallDownSpeed * 2) * deltaTime;
-    amplitudeFft -= fallFft * deltaTime;
-
     // Pull up by input.
     if (amplitudeFft < data) {
       amplitudeFft = data;
       fallFft = 0;
     }
-
-    data = amplitudeFft;
-
-    oscClient.send("/audio/smoothfft", data, err => {
-      if (err) console.error(err);
-    });
   }
 
   // if there is attack we send it, if not we send 0 to reset it on OSC device
@@ -52,3 +42,14 @@ oscServer.on("message", function(msg) {
     }
   }
 });
+
+setInterval(() => {
+  // Hold-and-fall-down animation.
+  fallFft += Math.pow(10, 1 + fallDownSpeed * 2) * deltaTime;
+  amplitudeFft -= fallFft * deltaTime;
+  amplitudeFft = Math.max(amplitudeFft, 0.0);
+
+  oscClient.send("/audio/smoothfft", amplitudeFft, err => {
+    if (err) console.error(err);
+  });
+}, 15);
